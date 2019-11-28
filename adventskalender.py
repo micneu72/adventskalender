@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    25.11.2019 11:06:35
+# Last Modified:    28.11.2019 13:28:53
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -94,6 +94,11 @@ def getURLs(uri):
     urls = sort_data(htmlcode, urlRegEx)
     return urls
 
+def createDir(dirname):
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)
+        
+
 ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
 
 kalenderurl = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
@@ -118,6 +123,9 @@ htmlfooter +=  """ <!-- Optional JavaScript -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
   </body>
 </html> """
+
+createDir("bilder")
+createDir("html")
 
 writehtml = open("html/index.html", "w")
 
