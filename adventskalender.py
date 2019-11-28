@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    28.11.2019 13:28:53
+# Last Modified:    28.11.2019 13:54:43
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -53,7 +53,13 @@ def timepost(start, stop):
     if zeit <= 59:
         int_s = int(zeit)
 
-    print("%2d Stunde(n), %2d Minute(n), %2d Sekunde(n)" % (int_h, int_m, int_s))
+    if int_h > 0:
+        print("%2d Stunde(n), %2d Minute(n), %2d Sekunde(n)" % (int_h, int_m, int_s))
+    elif int_m > 0:
+        print("%2d Minute(n), %2d Sekunde(n)" % (int_m, int_s))
+    else:
+        print("%2d Sekunde(n)" % (int_s))
+        
 
 def read_args():
     parser = argparse.ArgumentParser()
