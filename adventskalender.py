@@ -1,5 +1,8 @@
-#! /usr/bin/env python3
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+""".
+
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
 # Last Modified:    28.11.2019 13:54:43
@@ -13,26 +16,28 @@
 # pip3 install opencv-python
 # pip3 install pillow
 # brew install tesseract
-#
-from PIL import Image
-import sys
+"""
+
+#from PIL import Image
+#from requests_html import HTMLSession
+import requests
 import time
 import math
-import socket
-from bs4 import BeautifulSoup
 import re
 import os.path
-import time
-import requests
-import configparser
-import argparse
+
 import pytesseract
 import cv2
 import os
-import urllib.request
-import urllib
+
+
+ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
+KALENDERURL = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
+SEL = '#1984307661'
+
 
 def timepost(start, stop):
+    """laufzeit auswerten."""
     zeit = stop - start
     zeit = math.ceil(zeit)
 
@@ -59,33 +64,14 @@ def timepost(start, stop):
         print("%2d Minute(n), %2d Sekunde(n)" % (int_m, int_s))
     else:
         print("%2d Sekunde(n)" % (int_s))
-        
-
-def read_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("filename")
-    args = parser.parse_args()
-    filename = args.filename
-    return filename    
-
-def get_html_code2(uri):
-    page = requests.get(uri)
-    bsObj = BeautifulSoup(page.content, 'html.parser')
-    return bsObj
 
 
-def get_website_title(bsObj):
-    return bsObj.title.string
-
-
-def get_url_list(bsObj):
-    daten = [[]]
-    for link in bsObj.find_all('a'):
-        href = link.get('href')
-        urltext = link.get_text('href')
-        webtitle = get_website_title(bsObj)
-        daten += [[webtitle, href, urltext]]
-    return daten
+def get_html_code3(uri, sel):
+    """Crawl page."""
+    session = HTMLSession()
+    page = session.get(uri)
+    r = page.html.find('#1984307661')
+    return r
 
 
 def trenner(laenge, trennerzeichen):
@@ -94,20 +80,14 @@ def trenner(laenge, trennerzeichen):
     return str(trennzeile)
 
 
-def getURLs(uri):
-    bereich = ""
-    htmlcode = get_html_code2(uri)
-    urls = sort_data(htmlcode, urlRegEx)
-    return urls
+def create_dir(dirname):
+    os.makedirs(dirname, exist_ok=True)
 
-def createDir(dirname):
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
-        
 
-ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
+def convert_imgage_to_grey(datei):
+    image = cv2.imread(datei)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-kalenderurl = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
 
 htmlbody = """<!doctype html>
 <html lang="de">
@@ -130,10 +110,8 @@ htmlfooter +=  """ <!-- Optional JavaScript -->
   </body>
 </html> """
 
-createDir("bilder")
-createDir("html")
-
-writehtml = open("html/index.html", "w")
+create_dir("bilder")
+create_dir("html")
 
 # zeitmessung start
 start = time.time()
@@ -141,28 +119,25 @@ start = time.time()
 if __name__ == '__main__':
     NAME = 1
     bilder = []
-    htmlcode = get_html_code2(kalenderurl)
+    htmlcode = get_html_code3(KALENDERURL, SEL)
     try:
-        imgs = htmlcode.img['src']
-        urls = htmlcode.find_all('img')
-        tage = htmlcode.findAll("div", {"class": "dmNewParagraph"})
+        urls = htmlcode.find('img')
         for url in urls:
             match = re.search( 'tablet', url['src'])
             if match:
                 if not url['src'] == "https://cdn.website-editor.net/c52db4ba56694d33b1086a5b364f6c3a/dms3rep/multi/tablet/Screenshot+2018-08-28+10.19.47-165c58c4.png":
                     #print(url['src'])
                     bilder.append(url['src'])
-                
+
         htmlcontent = htmlbody
         htmlcontent += "<h3 align=center>Letze Änderung: " + ZEITDATUM + "</h3>\n"
-        for web in bilder:
+        for bildurl in bilder:
             datei = "bilder/" + str(NAME) + ".png"
-            url = web
-            print(url)
-            r = requests.get(url, allow_redirects=True)
-            open(datei, 'wb').write(r.content)
-            image = cv2.imread(datei)
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            print(bildurl)
+            r = requests.get(bildurl, allow_redirects=True)
+            with open(datei, 'wb') as f:
+                f.write(r.content)
+            convert_imgage_to_grey(datei)
 
             filename = "{}.png".format(os.getpid())
             cv2.imwrite(filename, gray)
@@ -172,7 +147,7 @@ if __name__ == '__main__':
             #print(text)
             text2 = re.findall("\d{4}", text)
             print(text2)
-            htmlcontent += '<img src="' + web + '">' + "\n" + "<br />"
+            htmlcontent += '<img src="' + bildurl + '">' + "\n" + "<br />"
             htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
             NAME += 1
     except:
@@ -181,8 +156,8 @@ if __name__ == '__main__':
         htmlcontent += "<h3 align=center>ist noch nicht gestartet</h3>\n"
 
     htmlcontent += htmlfooter
-    writehtml.write(htmlcontent)
-    writehtml.close()
+    with open("html/index.html", "w") as f:
+        f.write(htmlcontent)
     # zeitmessung stop
     stop = time.time()
 
