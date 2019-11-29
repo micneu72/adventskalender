@@ -19,15 +19,14 @@
 """
 
 #from PIL import Image
-#from requests_html import HTMLSession
+from requests_html import HTMLSession
+#import pytesseract
 import requests
 import time
 import math
 import re
 import os.path
-
-import pytesseract
-import cv2
+#import cv2
 import os
 
 
@@ -70,8 +69,8 @@ def get_html_code3(uri, sel):
     """Crawl page."""
     session = HTMLSession()
     page = session.get(uri)
-    r = page.html.find('#1984307661')
-    return r
+    r = page.html.find(sel)
+    return page
 
 
 def trenner(laenge, trennerzeichen):
@@ -120,6 +119,9 @@ if __name__ == '__main__':
     NAME = 1
     bilder = []
     htmlcode = get_html_code3(KALENDERURL, SEL)
+    print(type(htmlcode))
+    divfound = htmlcode.html.find(SEL)
+    print(type(divfound))
     try:
         urls = htmlcode.find('img')
         for url in urls:
