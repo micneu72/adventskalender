@@ -22,7 +22,7 @@ from PIL import Image
 from bs4 import BeautifulSoup
 import requests
 import socket
-#import pytesseract
+import pytesseract
 import cv2
 import sys
 import time
@@ -38,7 +38,7 @@ KALENDERURL = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
 #KALENDERURL = "https://heise.de"
 SEL = '1984307661'
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/605.1.15 (KHTML, like Gecko)'}
-TEST = True
+TEST = False
 
 
 def timepost(start, stop):
@@ -184,31 +184,32 @@ if __name__ == '__main__':
                 f.write(r.content)
             convert_image_to_gray(imagelocalfile)
 
-            #text = pytesseract.image_to_string(Image.open(filename))
-            #os.remove(filename)
-            #print(text)
-            #text2 = re.findall("\d{4}", text)
+            text = pytesseract.image_to_string(Image.open(imagelocalfile))
+            #os.remove(imagelocalfile)
+            print(text)
+            text2 = re.findall("\d{4}", text)
             #print(text2)
-            #htmlcontent += '<img src="' + imguri + '">' + "\n" + "<br />"
-            #htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
+            htmlcontent += '<img src="' + imguri + '">' + "\n" + "<br />"
+            htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
             NAME += 1
     try:
         htmlcontent = init_html_content()
         imgs = contentbereich.findAll("img")
         print(imgs)
         for imguri in imgs:
-            datei = "bilder/" + str(NAME) + ".png"
-            print(imguri)
-            r = requests.get(imguri, allow_redirects=True)
-            with open(datei, 'wb') as f:
+            print(imguri['src'])
+            fileextension = set_file_name(imguri['src'])
+            imagelocalfile = "bilder/" + str(NAME) + fileextension
+            r = requests.get(imguri['src'], allow_redirects=True)
+            with open(imagelocalfile, 'wb') as f:
                 f.write(r.content)
-            convert_image_to_gray(datei) 
+            convert_image_to_gray(imagelocalfile)
 
-            text = pytesseract.image_to_string(Image.open(filename))
-            os.remove(filename)
-            #print(text)
+            text = pytesseract.image_to_string(Image.open(imagelocalfile))
+            #os.remove(imagelocalfile)
+            print(text)
             text2 = re.findall("\d{4}", text)
-            print(text2)
+            #print(text2)
             htmlcontent += '<img src="' + imguri + '">' + "\n" + "<br />"
             htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
             NAME += 1
