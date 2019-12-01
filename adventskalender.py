@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    30.11.2019 12:08:34
+# Last Modified:    01.12.2019 14:46:06
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -36,6 +36,7 @@ import time
 ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
 KALENDERURL = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
 #KALENDERURL = "https://heise.de"
+#SEL = '1885042527'
 SEL = '1984307661'
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/605.1.15 (KHTML, like Gecko)'}
 TEST = False
@@ -120,11 +121,8 @@ def create_image_list():
     bilder = []
     urls = htmlcode.find('img')
     for url in urls:
-        match = re.search('tablet', url['src'])
-        if match:
-            if not url['src'] == "https://cdn.website-editor.net/c52db4ba56694d33b1086a5b364f6c3a/dms3rep/multi/tablet/Screenshot+2018-08-28+10.19.47-165c58c4.png":
-                #print(url['src'])
-                bilder.append(url['src'])
+        print(url['src'])
+        bilder.append(url['src'])
     return bilder
 
 
@@ -170,54 +168,29 @@ start = time.time()
 if __name__ == '__main__':
     NAME = 1
     htmlcode = get_html_code2(KALENDERURL, HEADERS)
-    contentbereich = htmlcode.findAll("div", {"id": SEL})
-    if TEST:
-        htmlcontent = init_html_content()
-        imgs = htmlcode.findAll("img")
-        #print(imgs)
-        for imguri in imgs:
-            print(imguri['src'])
-            fileextension = set_file_name(imguri['src'])
-            imagelocalfile = "bilder/" + str(NAME) + fileextension
-            r = requests.get(imguri['src'], allow_redirects=True)
-            with open(imagelocalfile, 'wb') as f:
-                f.write(r.content)
-            convert_image_to_gray(imagelocalfile)
+    contentbereich = htmlcode.find('div', {'id': SEL})
 
-            text = pytesseract.image_to_string(Image.open(imagelocalfile))
-            #os.remove(imagelocalfile)
-            print(text)
-            text2 = re.findall("\d{4}", text)
-            #print(text2)
-            htmlcontent += '<img src="' + imguri + '">' + "\n" + "<br />"
-            htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
-            NAME += 1
-    try:
-        htmlcontent = init_html_content()
-        imgs = contentbereich.findAll("img")
-        print(imgs)
-        for imguri in imgs:
-            print(imguri['src'])
-            fileextension = set_file_name(imguri['src'])
-            imagelocalfile = "bilder/" + str(NAME) + fileextension
-            r = requests.get(imguri['src'], allow_redirects=True)
-            with open(imagelocalfile, 'wb') as f:
-                f.write(r.content)
-            convert_image_to_gray(imagelocalfile)
+    htmlcontent = init_html_content()
+    imgs = contentbereich.find_all('img')
+    print(imgs)
+    for imguri in imgs:
+        print(imguri['src'])
+        fileextension = set_file_name(imguri['src'])
+        imagelocalfile = "bilder/" + str(NAME) + fileextension
+        print(imagelocalfile)
+        r = requests.get(imguri['src'], allow_redirects=True)
+        with open(imagelocalfile, 'wb') as f:
+            f.write(r.content)
+        convert_image_to_gray(imagelocalfile)
 
-            text = pytesseract.image_to_string(Image.open(imagelocalfile))
-            #os.remove(imagelocalfile)
-            print(text)
-            text2 = re.findall("\d{4}", text)
-            #print(text2)
-            htmlcontent += '<img src="' + imguri + '">' + "\n" + "<br />"
-            htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
-            NAME += 1
-
-    except:
-        print("keine bilder im bereich")
-        htmlcontent = init_html_content()
-        htmlcontent += "\t<h3 align=center>ist noch nicht gestartet</h3>\n"
+        text = pytesseract.image_to_string(Image.open(imagelocalfile))
+        #os.remove(imagelocalfile)
+        #print(text)
+        text2 = re.findall("\d{4}", text)
+        print(text2)
+        htmlcontent += '<img src="' + str(imguri['src']) + '">' + "\n" + "<br />"
+        htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
+        NAME += 1
 
     htmlcontent += htmlfooter
     with open("html/index.html", "w") as f:
