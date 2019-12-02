@@ -5,26 +5,21 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    02.12.2019 11:42:25
+# Last Modified:    02.12.2019 17:01:23
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
 ## https://www.pyimagesearch.com/2017/07/10/using-tesseract-ocr-python/
-# pip3 install pytesseract
-# apt install python3-pyocr
-# apt install python3-opencv
-# pip3 install opencv-python
-# pip3 install pillow
 # pip3 install boto3
 #
 """
 
-from PIL import Image
+#from PIL import Image
 from bs4 import BeautifulSoup
 import requests
 import socket
-import pytesseract
-import cv2
+#import pytesseract
+#import cv2
 import sys
 import time
 import math
@@ -85,20 +80,6 @@ def get_html_code2(uri, HEADERS):
     return bsObj
 
 
-def get_website_title(bsObj):
-    return bsObj.title.string
-
-
-def get_url_list(bsObj):
-    daten = [[]]
-    for link in bsObj.find_all('a'):
-        href = link.get('href')
-        urltext = link.get_text('href')
-        webtitle = get_website_title(bsObj)
-        daten += [[webtitle, href, urltext]]
-    return daten
-
-
 def trenner(laenge, trennerzeichen):
     textlaenge = int(len(laenge))
     trennzeile = trennerzeichen * textlaenge
@@ -107,15 +88,6 @@ def trenner(laenge, trennerzeichen):
 
 def create_dir(dirname):
     os.makedirs(dirname, exist_ok=True)
-
-
-def create_image_list():
-    bilder = []
-    urls = htmlcode.find('img')
-    for url in urls:
-        print(url['src'])
-        bilder.append(url['src'])
-    return bilder
 
 
 def init_html_content():
@@ -128,9 +100,22 @@ def set_file_name(imguri):
     extension = re.findall(r'\.[a-z][a-z][a-z]$',imguri)
     return extension[0]
 
-def read_text_from_image(localimagefile):
-    resulttext =start_document_text_detection(localimagefile)
-    return resulttext
+def read_text_from_image(imagelocalfile):
+    LOS = []
+    textract = boto3.client('textract')
+    with open(imagelocalfile, "rb") as f:
+        # Call Amazon Textract
+        response = textract.detect_document_text(
+        Document={
+            'Bytes': f.read()
+            }
+        )
+        for item in response["Blocks"]:
+            if item["BlockType"] == "LINE":
+                if re.match(r'^\d{4}$', item['Text']):
+                    #print(item['Text'])
+                    LOS.append(item['Text'])
+    return LOS
 
 
 htmlbody = """<!doctype html>
@@ -176,23 +161,9 @@ if __name__ == '__main__':
         r = requests.get(imguri['src'], allow_redirects=True)
         with open(imagelocalfile, 'wb') as f:
             f.write(r.content)
-        
-        textract = boto3.client('textract')
-        with open(imagelocalfile, "rb") as f:
-            # Call Amazon Textract
-            response = textract.detect_document_text(
-                Document={
-                    'Bytes': f.read()
-                    }
-                )
-        LOS = []
-        for item in response["Blocks"]:
-            if item["BlockType"] == "LINE":
-                if re.match(r'^\d{4}$', item['Text']):
-                    #print(item['Text'])
-                    LOS.append(item['Text'])
+
+        LOS = read_text_from_image(imagelocalfile)
         #os.remove(imagelocalfile)
-                
         htmlcontent += '<img src="' + str(imguri['src']) + '">' + "\n" + "<br />"
         htmlcontent += "<h2>" + str(LOS) + "</h2>" + "\n" +"<br />"
         NAME += 1
