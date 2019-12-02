@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    02.12.2019 06:55:35
+# Last Modified:    02.12.2019 11:42:25
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -37,8 +37,6 @@ import boto3
 
 ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
 KALENDERURL = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
-#KALENDERURL = "https://heise.de"
-#SEL = '1885042527'
 SEL = '1984307661'
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/605.1.15 (KHTML, like Gecko)'}
 TEST = False
