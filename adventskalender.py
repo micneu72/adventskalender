@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    02.12.2019 17:01:23
+# Last Modified:    02.12.2019 17:53:11
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -14,12 +14,9 @@
 #
 """
 
-#from PIL import Image
 from bs4 import BeautifulSoup
 import requests
 import socket
-#import pytesseract
-#import cv2
 import sys
 import time
 import math
@@ -128,11 +125,11 @@ htmlbody = """<!doctype html>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 
-    <title>Adventskalender OCR für emetriq GmbH</title>
+    <title>Adventskalender OCR (AWS Textract) für emetriq GmbH</title>
   </head>
   <body>""" + "\n"
 htmlfooter = "\t<h3 align=center>Letze Änderung: " + ZEITDATUM + "</h3>\n"
-htmlfooter += "\t<h3 align=center>(c) 2019 Michael Neumann | emetriq GmbH | Likedeeler</h3>"
+htmlfooter += "\t<h3 align=center>(c) 2019 Michael Neumann | emetriq GmbH | IT-Likedeeler</h3>"
 htmlfooter +=  """ <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
