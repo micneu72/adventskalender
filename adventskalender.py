@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    01.12.2019 14:46:06
+# Last Modified:    02.12.2019 06:55:35
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -15,6 +15,7 @@
 # apt install python3-opencv
 # pip3 install opencv-python
 # pip3 install pillow
+# pip3 install boto3
 #
 """
 
@@ -31,6 +32,7 @@ import re
 import os.path
 import os
 import time
+import boto3
 
 
 ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
@@ -109,14 +111,6 @@ def create_dir(dirname):
     os.makedirs(dirname, exist_ok=True)
 
 
-def convert_image_to_gray(datei):
-    print("Bilddatei: ", datei)
-    try:
-        img = Image.open(datei).convert('L')
-    except:
-        img = Image.open(datei).convert('LA')
-    img.save(datei)
-
 def create_image_list():
     bilder = []
     urls = htmlcode.find('img')
@@ -135,6 +129,10 @@ def init_html_content():
 def set_file_name(imguri):
     extension = re.findall(r'\.[a-z][a-z][a-z]$',imguri)
     return extension[0]
+
+def read_text_from_image(localimagefile):
+    resulttext =start_document_text_detection(localimagefile)
+    return resulttext
 
 
 htmlbody = """<!doctype html>
@@ -166,10 +164,9 @@ create_dir("html")
 start = time.time()
 
 if __name__ == '__main__':
-    NAME = 1
     htmlcode = get_html_code2(KALENDERURL, HEADERS)
     contentbereich = htmlcode.find('div', {'id': SEL})
-
+    NAME = 1
     htmlcontent = init_html_content()
     imgs = contentbereich.find_all('img')
     print(imgs)
@@ -181,15 +178,25 @@ if __name__ == '__main__':
         r = requests.get(imguri['src'], allow_redirects=True)
         with open(imagelocalfile, 'wb') as f:
             f.write(r.content)
-        convert_image_to_gray(imagelocalfile)
-
-        text = pytesseract.image_to_string(Image.open(imagelocalfile))
+        
+        textract = boto3.client('textract')
+        with open(imagelocalfile, "rb") as f:
+            # Call Amazon Textract
+            response = textract.detect_document_text(
+                Document={
+                    'Bytes': f.read()
+                    }
+                )
+        LOS = []
+        for item in response["Blocks"]:
+            if item["BlockType"] == "LINE":
+                if re.match(r'^\d{4}$', item['Text']):
+                    #print(item['Text'])
+                    LOS.append(item['Text'])
         #os.remove(imagelocalfile)
-        #print(text)
-        text2 = re.findall("\d{4}", text)
-        print(text2)
+                
         htmlcontent += '<img src="' + str(imguri['src']) + '">' + "\n" + "<br />"
-        htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
+        htmlcontent += "<h2>" + str(LOS) + "</h2>" + "\n" +"<br />"
         NAME += 1
 
     htmlcontent += htmlfooter
