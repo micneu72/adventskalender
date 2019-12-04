@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    04.12.2019 06:56:13
+# Last Modified:    04.12.2019 17:05:59
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -127,9 +127,12 @@ htmlbody = """<!doctype html>
 
     <title>Adventskalender OCR (AWS Textract) für emetriq GmbH</title>
   </head>
-  <body>""" + "\n"
-htmlfooter = "\t<h3 align=center>Letze Änderung: " + ZEITDATUM + "</h3>\n"
-htmlfooter += "\t<h3 align=center>(c) 2019 Michael Neumann | emetriq GmbH | IT-Likedeeler</h3>"
+  <body>
+    <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm"></div>""" + "\n"
+htmlfooter = '</div><footer class="pt-4 my-md-5 pt-md-5 border-top">'
+htmlfooter += "\t<h5 align=center>Letze Änderung: " + ZEITDATUM + "</h5>\n"
+htmlfooter += "\t<h5 align=center>(c) 2019 Michael Neumann | emetriq GmbH | IT-Likedeeler</h5>\n"
+htmlfooter += "</footer>"
 htmlfooter +=  """ <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
@@ -150,6 +153,7 @@ if __name__ == '__main__':
     htmlcontent = init_html_content()
     imgs = contentbereich.find_all('img')
     print(imgs)
+    htmlcontent += '<div class="container">'
     for imguri in imgs:
         print(imguri['src'])
         fileextension = set_file_name(imguri['src'])
@@ -159,11 +163,15 @@ if __name__ == '__main__':
         with open(imagelocalfile, 'wb') as f:
             f.write(r.content)
 
-        LOS = read_text_from_image(imagelocalfile)
+        LOSE = read_text_from_image(imagelocalfile)
         #os.remove(imagelocalfile)
         htmlcontent += "<h2>" + str(NAME) + ".Dezember" + "</h2>" + "\n" +"<br />"
-        htmlcontent += '<img src="' + str(imguri['src']) + '">' + "\n" + "<br />"
-        htmlcontent += "<h3>" + str(LOS) + "</h3>" + "\n" +"<br />"
+        htmlcontent += '<table class="table"><tr>' + "\n"
+        htmlcontent += '<th scope="col"><img src="' + str(imguri['src']) + '"></th>'
+        htmlcontent += '<th scope="col">'
+        for LOS in LOSE:
+            htmlcontent += "<h6>" + str(LOS) + "</h6>" + "\n" +"<br />"
+        htmlcontent += '</th></tr></table>'
         NAME += 1
 
     htmlcontent += htmlfooter
