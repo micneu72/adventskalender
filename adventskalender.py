@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    02.12.2019 17:53:11
+# Last Modified:    04.12.2019 06:56:13
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -161,8 +161,9 @@ if __name__ == '__main__':
 
         LOS = read_text_from_image(imagelocalfile)
         #os.remove(imagelocalfile)
+        htmlcontent += "<h2>" + str(NAME) + ".Dezember" + "</h2>" + "\n" +"<br />"
         htmlcontent += '<img src="' + str(imguri['src']) + '">' + "\n" + "<br />"
-        htmlcontent += "<h2>" + str(LOS) + "</h2>" + "\n" +"<br />"
+        htmlcontent += "<h3>" + str(LOS) + "</h3>" + "\n" +"<br />"
         NAME += 1
 
     htmlcontent += htmlfooter
