@@ -1,42 +1,41 @@
-#!/usr/bin/python3
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """.
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    28.11.2019 13:54:43
+# Last Modified:    05.12.2019 13:28:29
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
 ## https://www.pyimagesearch.com/2017/07/10/using-tesseract-ocr-python/
-# pip3 install pytesseract
-# apt install python3-pyocr
-# apt install python3-opencv
-# pip3 install opencv-python
-# pip3 install pillow
-# brew install tesseract
+# pip3 install boto3
+#
 """
 
-#from PIL import Image
-from requests_html import HTMLSession
-#import pytesseract
+from bs4 import BeautifulSoup
 import requests
+import socket
+import sys
 import time
 import math
 import re
 import os.path
-#import cv2
 import os
+import time
+from PIL import Image
+import pytesseract
 
 
 ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
 KALENDERURL = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
-SEL = '#1984307661'
+SEL = '1984307661'
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/605.1.15 (KHTML, like Gecko)'}
+TEST = False
 
 
 def timepost(start, stop):
-    """laufzeit auswerten."""
     zeit = stop - start
     zeit = math.ceil(zeit)
 
@@ -65,12 +64,18 @@ def timepost(start, stop):
         print("%2d Sekunde(n)" % (int_s))
 
 
-def get_html_code3(uri, sel):
-    """Crawl page."""
-    session = HTMLSession()
-    page = session.get(uri)
-    r = page.html.find(sel)
-    return page
+def read_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename")
+    args = parser.parse_args()
+    filename = args.filename
+    return filename    
+
+
+def get_html_code2(uri, HEADERS):
+    page = requests.get(uri, headers=HEADERS)
+    bsObj = BeautifulSoup(page.content, 'html.parser')
+    return bsObj
 
 
 def trenner(laenge, trennerzeichen):
@@ -83,10 +88,41 @@ def create_dir(dirname):
     os.makedirs(dirname, exist_ok=True)
 
 
-def convert_imgage_to_grey(datei):
-    image = cv2.imread(datei)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+def init_html_content():
+    htmlcontent = htmlbody
+    htmlcontent += "\t<h3 align=center>Letze Änderung: " + ZEITDATUM + "</h3>\n"
+    return htmlcontent
 
+
+def set_file_name(imguri):
+    extension = re.findall(r'\.[a-z][a-z][a-z]$',imguri)
+    return extension[0]
+
+def read_text_from_image(imagelocalfile):
+    LOS = []
+    textract = boto3.client('textract')
+    with open(imagelocalfile, "rb") as f:
+        # Call Amazon Textract
+        response = textract.detect_document_text(
+        Document={
+            'Bytes': f.read()
+            }
+        )
+        for item in response["Blocks"]:
+            if item["BlockType"] == "LINE":
+                if re.match(r'^\d{4}$', item['Text']):
+                    #print(item['Text'])
+                    LOS.append(item['Text'])
+    return LOS
+
+def read_text_from_image_local(imagelocalfile):
+    LOS = []
+    item = (pytesseract.image_to_string(imagelocalfile))
+    for m in re.finditer(r'(\d{4})', item):
+        LOS.append(m.group(1))
+
+    print(LOS)
+    return LOS
 
 htmlbody = """<!doctype html>
 <html lang="de">
@@ -100,14 +136,18 @@ htmlbody = """<!doctype html>
 
     <title>Adventskalender OCR für emetriq GmbH</title>
   </head>
-  <body>""" + "\n"
-htmlfooter = "<h3 align=center>Letze Änderung: " + ZEITDATUM + "</h3>\n"
-htmlfooter += "<h3 align=center>(c) 2019 Michael Neumann | emetriq GmbH | Likedeeler</h3>"
+  <body>
+    <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm"></div>""" + "\n"
+htmlfooter = '</div><footer class="pt-4 my-md-5 pt-md-5 border-top">'
+htmlfooter += "\t<h5 align=center>Letze Änderung: " + ZEITDATUM + "</h5>\n"
+htmlfooter += "\t<h5 align=center>(c) 2019 Michael Neumann | emetriq GmbH | IT-Likedeeler</h5>\n"
+htmlfooter += "</footer>"
 htmlfooter +=  """ <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
   </body>
 </html> """
+
 
 create_dir("bilder")
 create_dir("html")
@@ -116,50 +156,37 @@ create_dir("html")
 start = time.time()
 
 if __name__ == '__main__':
+    htmlcode = get_html_code2(KALENDERURL, HEADERS)
+    contentbereich = htmlcode.find('div', {'id': SEL})
     NAME = 1
-    bilder = []
-    htmlcode = get_html_code3(KALENDERURL, SEL)
-    print(type(htmlcode))
-    divfound = htmlcode.html.find(SEL)
-    print(type(divfound))
-    try:
-        urls = htmlcode.find('img')
-        for url in urls:
-            match = re.search( 'tablet', url['src'])
-            if match:
-                if not url['src'] == "https://cdn.website-editor.net/c52db4ba56694d33b1086a5b364f6c3a/dms3rep/multi/tablet/Screenshot+2018-08-28+10.19.47-165c58c4.png":
-                    #print(url['src'])
-                    bilder.append(url['src'])
+    htmlcontent = init_html_content()
+    imgs = contentbereich.find_all('img')
+    print(imgs)
+    htmlcontent += '<div class="container">'
+    for imguri in imgs:
+        print(imguri['src'])
+        fileextension = set_file_name(imguri['src'])
+        imagelocalfile = "bilder/" + str(NAME) + fileextension
+        print(imagelocalfile)
+        r = requests.get(imguri['src'], allow_redirects=True)
+        with open(imagelocalfile, 'wb') as f:
+            f.write(r.content)
 
-        htmlcontent = htmlbody
-        htmlcontent += "<h3 align=center>Letze Änderung: " + ZEITDATUM + "</h3>\n"
-        for bildurl in bilder:
-            datei = "bilder/" + str(NAME) + ".png"
-            print(bildurl)
-            r = requests.get(bildurl, allow_redirects=True)
-            with open(datei, 'wb') as f:
-                f.write(r.content)
-            convert_imgage_to_grey(datei)
-
-            filename = "{}.png".format(os.getpid())
-            cv2.imwrite(filename, gray)
-
-            text = pytesseract.image_to_string(Image.open(filename))
-            os.remove(filename)
-            #print(text)
-            text2 = re.findall("\d{4}", text)
-            print(text2)
-            htmlcontent += '<img src="' + bildurl + '">' + "\n" + "<br />"
-            htmlcontent += "<h2>" + str(text2) + "</h2>" + "\n" +"<br />"
-            NAME += 1
-    except:
-        htmlcontent = htmlbody
-        htmlcontent += "<h3 align=center>Letze Änderung: " + ZEITDATUM + "</h3>\n"
-        htmlcontent += "<h3 align=center>ist noch nicht gestartet</h3>\n"
+        LOSE = read_text_from_image_local(imagelocalfile)
+        #os.remove(imagelocalfile)
+        htmlcontent += "<h2>" + str(NAME) + ".Dezember" + "</h2>" + "\n" +"<br />"
+        htmlcontent += '<table class="table"><tr>' + "\n"
+        htmlcontent += '<th scope="col"><img src="' + str(imguri['src']) + '"></th>'
+        htmlcontent += '<th scope="col">'
+        for LOS in LOSE:
+            htmlcontent += "<h6>" + str(LOS) + "</h6>" + "\n" +"<br />"
+        htmlcontent += '</th></tr></table>'
+        NAME += 1
 
     htmlcontent += htmlfooter
     with open("html/index.html", "w") as f:
         f.write(htmlcontent)
+
     # zeitmessung stop
     stop = time.time()
 
