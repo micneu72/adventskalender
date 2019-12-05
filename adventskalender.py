@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    04.12.2019 17:05:59
+# Last Modified:    05.12.2019 13:33:50
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -24,7 +24,8 @@ import re
 import os.path
 import os
 import time
-import boto3
+from PIL import Image
+import pytesseract
 
 
 ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
@@ -114,6 +115,14 @@ def read_text_from_image(imagelocalfile):
                     LOS.append(item['Text'])
     return LOS
 
+def read_text_from_image_local(imagelocalfile):
+    LOS = []
+    item = (pytesseract.image_to_string(imagelocalfile))
+    for m in re.finditer(r'(\d{4})', item):
+        LOS.append(m.group(1))
+
+    print(LOS)
+    return LOS
 
 htmlbody = """<!doctype html>
 <html lang="de">
@@ -125,7 +134,7 @@ htmlbody = """<!doctype html>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 
-    <title>Adventskalender OCR (AWS Textract) für emetriq GmbH</title>
+    <title>Adventskalender OCR für emetriq GmbH</title>
   </head>
   <body>
     <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm"></div>""" + "\n"
@@ -163,7 +172,7 @@ if __name__ == '__main__':
         with open(imagelocalfile, 'wb') as f:
             f.write(r.content)
 
-        LOSE = read_text_from_image(imagelocalfile)
+        LOSE = read_text_from_image_local(imagelocalfile)
         #os.remove(imagelocalfile)
         htmlcontent += "<h2>" + str(NAME) + ".Dezember" + "</h2>" + "\n" +"<br />"
         htmlcontent += '<table class="table"><tr>' + "\n"
@@ -183,3 +192,4 @@ if __name__ == '__main__':
 
     # zeitmessung auswertung
     timepost(start, stop)
+
