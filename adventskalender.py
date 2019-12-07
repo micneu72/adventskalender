@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    05.12.2019 13:33:50
+# Last Modified:    07.12.2019 21:50:05
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -159,10 +159,12 @@ if __name__ == '__main__':
     htmlcode = get_html_code2(KALENDERURL, HEADERS)
     contentbereich = htmlcode.find('div', {'id': SEL})
     NAME = 1
-    htmlcontent = init_html_content()
+    htmlsortierung = ""
+    htmlsort = None
+    #htmlcontent = init_html_content()
     imgs = contentbereich.find_all('img')
-    print(imgs)
-    htmlcontent += '<div class="container">'
+    #print(imgs)
+    htmlcontent = ""
     for imguri in imgs:
         print(imguri['src'])
         fileextension = set_file_name(imguri['src'])
@@ -173,19 +175,34 @@ if __name__ == '__main__':
             f.write(r.content)
 
         LOSE = read_text_from_image_local(imagelocalfile)
+        if re.findall('^\d{1}$', str(NAME)):
+            Tag = "0" + str(NAME) + ".Dezember"
+        else:
+            Tag = str(NAME) + ".Dezember"
+        if htmlsort is None:
+            htmlsort = [[Tag, imguri['src'], LOSE, imagelocalfile]]
+        else:
+            htmlsort.append([Tag, imguri['src'], LOSE, imagelocalfile])
+
         #os.remove(imagelocalfile)
-        htmlcontent += "<h2>" + str(NAME) + ".Dezember" + "</h2>" + "\n" +"<br />"
-        htmlcontent += '<table class="table"><tr>' + "\n"
-        htmlcontent += '<th scope="col"><img src="' + str(imguri['src']) + '"></th>'
-        htmlcontent += '<th scope="col">'
-        for LOS in LOSE:
-            htmlcontent += "<h6>" + str(LOS) + "</h6>" + "\n" +"<br />"
-        htmlcontent += '</th></tr></table>'
+        
         NAME += 1
 
-    htmlcontent += htmlfooter
+    htmlsort.reverse()
+    for i in htmlsort:
+        htmlcontent += "<h2>" + i[0] + "</h2>" + "\n<br />"
+        htmlcontent += '<table class="table"><tr>' + "\n"
+        htmlcontent += '<th scope="col"><img src="' + i[1] + '"></th>'
+        htmlcontent += '<th scope="col">'
+        for LOS in i[2]:
+            htmlcontent += "<h6>" + LOS + "</h6>" + "\n<br />"
+        htmlcontent += '</th></tr></table>'
+    html = init_html_content()
+    html += '<div class="container">'
+    html += htmlcontent
+    html += htmlfooter
     with open("html/index.html", "w") as f:
-        f.write(htmlcontent)
+        f.write(html)
 
     # zeitmessung stop
     stop = time.time()
