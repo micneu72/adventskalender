@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    08.12.2019 14:01:46
+# Last Modified:    08.12.2019 14:04:17
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -118,6 +118,7 @@ def read_text_from_image_aws(imagelocalfile):
                         text += "," + item['Text']
                     else:
                         text = item['Text']
+    print(LOS)
     return LOS, text
 
 def read_text_from_image_local(imagelocalfile):
