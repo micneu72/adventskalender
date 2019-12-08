@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    08.12.2019 01:17:32
+# Last Modified:    08.12.2019 13:52:18
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -98,7 +98,7 @@ def set_file_name(imguri):
     extension = re.findall(r'\.[a-z][a-z][a-z]$',imguri)
     return extension[0]
 
-def read_text_from_image(imagelocalfile):
+def read_text_from_image_aws(imagelocalfile):
     LOS = []
     textract = boto3.client('textract')
     with open(imagelocalfile, "rb") as f:
@@ -117,12 +117,38 @@ def read_text_from_image(imagelocalfile):
 
 def read_text_from_image_local(imagelocalfile):
     LOS = []
+    text = ""
     item = (pytesseract.image_to_string(imagelocalfile))
     for m in re.finditer(r'(\d{4})', item):
         LOS.append(m.group(1))
+        if text:
+            text += "," + m.group(1)
+        else:
+            text = m.group(1)
 
     print(LOS)
-    return LOS
+    #print(text)
+    return LOS, text
+
+def read_list(filename):
+    with open(filename, 'r') as f:
+        ocr = f.readline()
+        ocrlist = list(ocr.split(','))
+    return ocrlist
+
+
+def write_list(filename, ocrlist):
+    with open(filename, 'w') as f:
+        f.write(ocrlist)
+
+
+def set_Tag_name(NAME):
+    if re.findall('^\d{1}$', str(NAME)):
+        Tag = "0" + str(NAME) + ".Dezember"
+    else:
+        Tag = str(NAME) + ".Dezember"
+    return Tag
+
 
 htmlbody = """<!doctype html>
 <html lang="de">
@@ -166,6 +192,7 @@ if __name__ == '__main__':
     #print(imgs)
     htmlcontent = ""
     for imguri in imgs:
+        Tag = set_Tag_name(NAME)
         print(imguri['src'])
         fileextension = set_file_name(imguri['src'])
         imagelocalfile = "bilder/" + str(NAME) + fileextension
@@ -174,15 +201,20 @@ if __name__ == '__main__':
         with open(imagelocalfile, 'wb') as f:
             f.write(r.content)
 
-        LOSE = read_text_from_image(imagelocalfile)
-        if re.findall('^\d{1}$', str(NAME)):
-            Tag = "0" + str(NAME) + ".Dezember"
-        else:
-            Tag = str(NAME) + ".Dezember"
+        try:
+            LOSE = read_list("bilder/" + Tag)
+            print("LOSE Eingelesen:",LOSE)
+        except:
+            print("except bereich bilder ocr")
+            LOSE1 = read_text_from_image_aws(imagelocalfile)
+            write_list("bilder/" + Tag, LOSE1[1])
+            LOSE = LOSE1[0]
+        
         if htmlsort is None:
             htmlsort = [[Tag, imguri['src'], LOSE, imagelocalfile]]
         else:
             htmlsort.append([Tag, imguri['src'], LOSE, imagelocalfile])
+        
 
         #os.remove(imagelocalfile)
         
