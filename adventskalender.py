@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    07.12.2019 21:50:05
+# Last Modified:    08.12.2019 01:17:32
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -26,7 +26,7 @@ import os
 import time
 from PIL import Image
 import pytesseract
-
+import boto3
 
 ZEITDATUM = time.strftime("%d.%m.%Y %H:%M:%S")
 KALENDERURL = "https://www.lc-ellerbekrellingen.de/weihnachtskalender-2018"
@@ -174,7 +174,7 @@ if __name__ == '__main__':
         with open(imagelocalfile, 'wb') as f:
             f.write(r.content)
 
-        LOSE = read_text_from_image_local(imagelocalfile)
+        LOSE = read_text_from_image(imagelocalfile)
         if re.findall('^\d{1}$', str(NAME)):
             Tag = "0" + str(NAME) + ".Dezember"
         else:
