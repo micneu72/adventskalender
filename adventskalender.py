@@ -100,6 +100,7 @@ def set_file_name(imguri):
 
 def read_text_from_image_aws(imagelocalfile):
     LOS = []
+    text = ""
     textract = boto3.client('textract')
     with open(imagelocalfile, "rb") as f:
         # Call Amazon Textract
