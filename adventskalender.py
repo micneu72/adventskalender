@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    08.12.2019 13:52:18
+# Last Modified:    08.12.2019 13:58:07
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -113,7 +113,11 @@ def read_text_from_image_aws(imagelocalfile):
                 if re.match(r'^\d{4}$', item['Text']):
                     #print(item['Text'])
                     LOS.append(item['Text'])
-    return LOS
+                    if text:
+                        text += "," + m.group(1)
+                    else:
+                        text = m.group(1)
+    return LOS, text
 
 def read_text_from_image_local(imagelocalfile):
     LOS = []
