@@ -5,7 +5,7 @@
 
 # Script Name:      adventskalender.py
 # CreationDate:     04.12.2018
-# Last Modified:    08.12.2019 14:04:17
+# Last Modified:    19.12.2019 10:20:10
 # Copyright:        Michael N. (c)2018
 # Purpose:
 #
@@ -77,6 +77,11 @@ def get_html_code2(uri, HEADERS):
     bsObj = BeautifulSoup(page.content, 'html.parser')
     return bsObj
 
+def prettyHTML(htmlcode):
+    #from BeautifulSoup import BeautifulSoup as bs
+    soup = BeautifulSoup(htmlcode)
+    prettyh = soup.prettify()
+    return prettyh
 
 def trenner(laenge, trennerzeichen):
     textlaenge = int(len(laenge))
@@ -241,10 +246,10 @@ if __name__ == '__main__':
     html += htmlfooter
     with open("html/index.html", "w") as f:
         f.write(html)
-
     # zeitmessung stop
     stop = time.time()
 
     # zeitmessung auswertung
     timepost(start, stop)
+
 
